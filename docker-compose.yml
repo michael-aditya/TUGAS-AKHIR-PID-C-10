@@ -64,7 +64,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cnc_app_password}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cnc_root_password}
     ports:
-      - "3306:3306"
+      - "${MYSQL_PUBLISHED_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./src/mysql/init:/docker-entrypoint-initdb.d:ro
@@ -82,7 +82,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-cnc_app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cnc_app_password}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PUBLISHED_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -92,6 +92,30 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+
+  warehouse-integration-tests:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: src/warehouse/Dockerfile.test
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      RUN_DB_INTEGRATION: "1"
+      WAREHOUSE_TEST_IN_CONTAINER: "1"
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cnc_master}
+      MYSQL_USER: ${MYSQL_USER:-cnc_test}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cnc_test_password}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-cnc_dwh}
+      POSTGRES_USER: ${POSTGRES_USER:-cnc_test}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cnc_test_password}
 
   simulator:
     build:
