@@ -211,23 +211,40 @@ class TestDatabaseBootstrapIntegration(unittest.TestCase):
         )
         self.assertEqual(
             self._postgres(
-                "SELECT t.relname || ':' || r.relname "
-                "FROM pg_constraint c "
-                "JOIN pg_class t ON t.oid = c.conrelid "
-                "JOIN pg_class r ON r.oid = c.confrelid "
-                "WHERE t.relname IN ('fact_machine_hourly', 'fact_downtime_event', 'fact_alert') "
-                "AND c.contype = 'f' ORDER BY 1"
+                "SELECT kcu.table_name || ':' || kcu.column_name || ':' || "
+                "ccu.table_name || ':' || ccu.column_name "
+                "FROM information_schema.key_column_usage kcu "
+                "JOIN information_schema.constraint_column_usage ccu "
+                "ON ccu.constraint_catalog = kcu.constraint_catalog "
+                "AND ccu.constraint_schema = kcu.constraint_schema "
+                "AND ccu.constraint_name = kcu.constraint_name "
+                "WHERE kcu.table_schema = 'public' "
+                "AND kcu.table_name IN "
+                "('fact_machine_hourly', 'fact_downtime_event', 'fact_alert') "
+                "AND kcu.position_in_unique_constraint IS NOT NULL "
+                "ORDER BY 1"
             ),
             [
-                "fact_alert:dim_failure_type",
-                "fact_alert:dim_machine",
-                "fact_alert:dim_time",
-                "fact_downtime_event:dim_failure_type",
-                "fact_downtime_event:dim_machine",
-                "fact_downtime_event:dim_time",
-                "fact_machine_hourly:dim_machine",
-                "fact_machine_hourly:dim_time",
+                "fact_alert:failure_type_key:dim_failure_type:failure_type_key",
+                "fact_alert:machine_key:dim_machine:machine_key",
+                "fact_alert:time_key:dim_time:time_key",
+                "fact_downtime_event:end_time_key:dim_time:time_key",
+                "fact_downtime_event:failure_type_key:dim_failure_type:failure_type_key",
+                "fact_downtime_event:machine_key:dim_machine:machine_key",
+                "fact_downtime_event:start_time_key:dim_time:time_key",
+                "fact_machine_hourly:machine_key:dim_machine:machine_key",
+                "fact_machine_hourly:time_key:dim_time:time_key",
             ],
+        )
+        self.assertEqual(
+            self._postgres(
+                "SELECT column_name || ':' || is_nullable "
+                "FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = 'fact_downtime_event' "
+                "AND column_name IN ('start_time_key', 'end_time_key') "
+                "ORDER BY column_name"
+            ),
+            ["end_time_key:YES", "start_time_key:NO"],
         )
         self.assertEqual(
             self._postgres(
