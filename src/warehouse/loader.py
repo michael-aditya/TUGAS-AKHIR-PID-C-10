@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import json
-from typing import Any, Iterable, Iterator, Mapping, Protocol, Sequence
+from typing import Any, Iterable, Iterator, Mapping, NamedTuple, Protocol, Sequence
 
 
 class Cursor(Protocol):
@@ -28,43 +28,51 @@ class Connection(Protocol):
     def rollback(self) -> None: ...
 
 
-FAILURE_TYPES: tuple[tuple[str, str, str, str, str], ...] = (
-    (
+class FailureTypeDefinition(NamedTuple):
+    failure_code: str
+    failure_name: str
+    category: str
+    default_severity: str
+    description: str
+
+
+FAILURE_TYPES: tuple[FailureTypeDefinition, ...] = (
+    FailureTypeDefinition(
         "VIB_WARNING",
         "Vibration Warning",
         "VIBRATION",
         "WARNING",
         "Vibration reached the warning threshold of 4.5 mm/s.",
     ),
-    (
+    FailureTypeDefinition(
         "VIB_CRITICAL",
         "Critical Vibration",
         "VIBRATION",
         "CRITICAL",
         "Vibration reached the critical threshold of 7.1 mm/s.",
     ),
-    (
+    FailureTypeDefinition(
         "TEMP_HIGH",
         "High Spindle Temperature",
         "TEMPERATURE",
         "WARNING",
         "Spindle temperature reached a warning or critical threshold.",
     ),
-    (
+    FailureTypeDefinition(
         "OVERLOAD",
         "Spindle Overload",
         "LOAD",
         "WARNING",
         "Spindle load reached the overload threshold.",
     ),
-    (
+    FailureTypeDefinition(
         "MAINTENANCE_DUE_RUL",
         "Maintenance Due by RUL",
         "MAINTENANCE",
         "CRITICAL",
         "Estimated remaining useful life is below 48 hours.",
     ),
-    (
+    FailureTypeDefinition(
         "UNPLANNED_DOWNTIME",
         "Unplanned Downtime",
         "DOWNTIME",
@@ -209,14 +217,9 @@ class WarehouseLoader:
 
             machine_keys: dict[str, int] = {}
             for machine in machines:
-                cursor.execute(
-                    "SELECT machine_key FROM dim_machine WHERE machine_id = %s",
-                    (machine["machine_id"],),
+                machine_keys[machine["machine_id"]] = self._machine_key(
+                    cursor, machine["machine_id"]
                 )
-                row = cursor.fetchone()
-                if row is None:
-                    raise LookupError("Machine %s was not synchronized" % machine["machine_id"])
-                machine_keys[machine["machine_id"]] = row[0]
 
             device_columns = ("device_id", "machine_key") + DEVICE_FIELDS[1:]
             device_values = []
@@ -466,27 +469,52 @@ class WarehouseLoader:
 
     @staticmethod
     def _machine_key(cursor: Cursor, machine_id: str) -> int:
-        cursor.execute("SELECT machine_key FROM dim_machine WHERE machine_id = %s", (machine_id,))
-        row = cursor.fetchone()
-        if row is None:
-            raise LookupError("Unknown machine_id: %s" % machine_id)
-        return row[0]
+        return WarehouseLoader._dimension_key(
+            cursor,
+            table="dim_machine",
+            key_column="machine_key",
+            natural_key_column="machine_id",
+            natural_key_value=machine_id,
+            missing_message="Unknown machine_id: %s" % machine_id,
+        )
 
     @staticmethod
     def _time_key(cursor: Cursor, hour_start: datetime) -> int:
-        cursor.execute("SELECT time_key FROM dim_time WHERE hour_start = %s", (hour_start,))
-        row = cursor.fetchone()
-        if row is None:
-            raise LookupError("Missing dim_time hour: %s" % hour_start.isoformat())
-        return row[0]
+        return WarehouseLoader._dimension_key(
+            cursor,
+            table="dim_time",
+            key_column="time_key",
+            natural_key_column="hour_start",
+            natural_key_value=hour_start,
+            missing_message="Missing dim_time hour: %s" % hour_start.isoformat(),
+        )
 
     @staticmethod
     def _failure_type_key(cursor: Cursor, failure_code: str) -> int:
+        return WarehouseLoader._dimension_key(
+            cursor,
+            table="dim_failure_type",
+            key_column="failure_type_key",
+            natural_key_column="failure_code",
+            natural_key_value=failure_code,
+            missing_message="Unknown failure_code: %s" % failure_code,
+        )
+
+    @staticmethod
+    def _dimension_key(
+        cursor: Cursor,
+        table: str,
+        key_column: str,
+        natural_key_column: str,
+        natural_key_value: Any,
+        missing_message: str,
+    ) -> int:
         cursor.execute(
-            "SELECT failure_type_key FROM dim_failure_type WHERE failure_code = %s",
-            (failure_code,),
+            "SELECT %s FROM %s WHERE %s = %%s"
+            % (key_column, table, natural_key_column),
+            (natural_key_value,),
         )
         row = cursor.fetchone()
         if row is None:
-            raise LookupError("Unknown failure_code: %s" % failure_code)
+            raise LookupError(missing_message)
         return row[0]

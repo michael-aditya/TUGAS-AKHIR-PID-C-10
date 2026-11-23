@@ -109,13 +109,13 @@ services:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-cnc_master}
-      MYSQL_USER: ${MYSQL_USER:-cnc_test}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cnc_test_password}
+      MYSQL_USER: ${MYSQL_USER:-cnc_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cnc_app_password}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-cnc_dwh}
-      POSTGRES_USER: ${POSTGRES_USER:-cnc_test}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cnc_test_password}
+      POSTGRES_USER: ${POSTGRES_USER:-cnc_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cnc_app_password}
 
   simulator:
     build:
