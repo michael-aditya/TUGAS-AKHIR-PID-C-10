@@ -1,5 +1,3 @@
-SET NAMES utf8mb4;
-
 CREATE TABLE IF NOT EXISTS machine (
     machine_id VARCHAR(16) NOT NULL PRIMARY KEY,
     model VARCHAR(64) NOT NULL,
