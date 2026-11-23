@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Emits valid **Telemetry Reading** records containing `device_id`, `device_type`, `machine_id`, `timestamp`, and metric `data` across all 10 **Machine** assets and 30 **Device** endpoints (`CNC-01`..`CNC-10` × `VIB`, `SPD`, `PRD`).
-- [ ] Reproduces the 7-day **Gradual Degradation** trajectories: `CNC-03` reaches `>= 7.1 mm/s` and transitions its **Operational Status** to `DOWN` on Day 6; `CNC-07` rises steadily over the final 72 hours to `~5.8 mm/s` (`+0.045 mm/s/h`); `CNC-09` rises gradually to `~4.6 mm/s` (`+0.030 mm/s/h`); the other 7 **Machine** assets stay within normal operating ranges (`0.5–3.5 mm/s`, `30–70 °C`, `0–12000 rpm`).
-- [ ] Injects all 6 configurable **Dirty Data** categories (`missing_value`, `duplicate`, **Out-of-Range Spike** `> 25.0 mm/s` or `< 0`, **Stuck Sensor** runs of `>= 4` consecutive identical float values, `inconsistent_format` status/timestamp strings, and `late_event` delayed timestamps).
-- [ ] Logs every intentionally injected fault into the out-of-band **Injection Audit Log** while keeping the **Telemetry Reading** JSON payload free of any dirty-data indicator flags (per ADR-0001).
-- [ ] Automated test suite exercises the Seam 1 generator interface to verify 30-device coverage, degradation trajectories, payload purity, and exact reconciliation between injected faults and the **Injection Audit Log**.
+- [x] Emits valid **Telemetry Reading** records containing `device_id`, `device_type`, `machine_id`, `timestamp`, and metric `data` across all 10 **Machine** assets and 30 **Device** endpoints (`CNC-01`..`CNC-10` × `VIB`, `SPD`, `PRD`).
+- [x] Reproduces the 7-day **Gradual Degradation** trajectories: `CNC-03` reaches `>= 7.1 mm/s` and transitions its **Operational Status** to `DOWN` on Day 6; `CNC-07` rises steadily over the final 72 hours to `~5.8 mm/s` (`+0.045 mm/s/h`); `CNC-09` rises gradually to `~4.6 mm/s` (`+0.030 mm/s/h`); the other 7 **Machine** assets stay within normal operating ranges (`0.5–3.5 mm/s`, `30–70 °C`, `0–12000 rpm`).
+- [x] Injects all 6 configurable **Dirty Data** categories (`missing_value`, `duplicate`, **Out-of-Range Spike** `> 25.0 mm/s` or `< 0`, **Stuck Sensor** runs of `>= 4` consecutive identical float values, `inconsistent_format` status/timestamp strings, and `late_event` delayed timestamps).
+- [x] Logs every intentionally injected fault into the out-of-band **Injection Audit Log** while keeping the **Telemetry Reading** JSON payload free of any dirty-data indicator flags (per ADR-0001).
+- [x] Automated test suite exercises the Seam 1 generator interface to verify 30-device coverage, degradation trajectories, payload purity, and exact reconciliation between injected faults and the **Injection Audit Log**.

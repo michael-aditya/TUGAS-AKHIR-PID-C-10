@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: [Anggota 1] CNC Telemetry Simulator, 7-Day Gradual Degradation Generator & Out-of-Band Dirty Data Injector
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] On container startup, automatically populates MongoDB raw storage (`telemetry_raw` and `injection_audit_log`) with 7 days of historical data across all 10 **Machine** assets and 30 **Device** endpoints if not already seeded, then transitions to continuous live MQTT publishing (~1 message/second/device).
-- [ ] Ingestion bridge consumes live **Telemetry Reading** messages from MQTT (`sensors/cnc/+/+`), publishes them to Apache Kafka (`cnc.telemetry.raw` in KRaft mode), and writes live raw records to MongoDB.
-- [ ] Spark Structured Streaming (`local[*]`) consumes from Kafka and produces 1-minute and 10-minute windowed aggregations per **Machine** (avg/max vibration, avg/max spindle temperature, avg RPM, avg load percentage, parts produced, and instant **Health Index**).
-- [ ] Spark Structured Streaming detects real-time threshold breaches (such as vibration exceeding warning `4.5 mm/s` or critical `7.1 mm/s` thresholds and spindle temperature exceeding `70 °C` / `85 °C`) while filtering obvious non-physical **Out-of-Range Spike** values (`> 25.0 mm/s`), writing active alerts and windowed metrics to the serving layer.
-- [ ] End-to-end streaming flow from Simulator → MQTT → Bridge → Kafka → MongoDB Raw & Spark Structured Streaming is verifiable via automated or container health checks.
+- [x] On container startup, automatically populates MongoDB raw storage (`telemetry_raw` and `injection_audit_log`) with 7 days of historical data across all 10 **Machine** assets and 30 **Device** endpoints if not already seeded, then transitions to continuous live MQTT publishing (~1 message/second/device).
+- [x] Ingestion bridge consumes live **Telemetry Reading** messages from MQTT (`sensors/cnc/+/+`), publishes them to Apache Kafka (`cnc.telemetry.raw` in KRaft mode), and writes live raw records to MongoDB.
+- [x] Spark Structured Streaming (`local[*]`) consumes from Kafka and produces 1-minute and 10-minute windowed aggregations per **Machine** (avg/max vibration, avg/max spindle temperature, avg RPM, avg load percentage, parts produced, and instant **Health Index**).
+- [x] Spark Structured Streaming detects real-time threshold breaches (such as vibration exceeding warning `4.5 mm/s` or critical `7.1 mm/s` thresholds and spindle temperature exceeding `70 °C` / `85 °C`) while filtering obvious non-physical **Out-of-Range Spike** values (`> 25.0 mm/s`), writing active alerts and windowed metrics to the serving layer.
+- [x] End-to-end streaming flow from Simulator → MQTT → Bridge → Kafka → MongoDB Raw & Spark Structured Streaming is verifiable via automated or container health checks.
