@@ -56,6 +56,43 @@ services:
       retries: 5
     restart: unless-stopped
 
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cnc_master}
+      MYSQL_USER: ${MYSQL_USER:-cnc_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cnc_app_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cnc_root_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cnc_dwh}
+      POSTGRES_USER: ${POSTGRES_USER:-cnc_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cnc_app_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   simulator:
     build:
       context: ./src
@@ -113,10 +150,12 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP:-kafka:29092}
       KAFKA_TOPIC: ${KAFKA_TOPIC:-cnc.telemetry.raw}
-      POSTGRES_DSN: ${POSTGRES_DSN:-}
+      POSTGRES_DSN: ${POSTGRES_DSN:-postgresql://cnc_app:cnc_app_password@postgres:5432/cnc_dwh}
       SPARK_OUTPUT_DIR: /app/data/streaming
       SPARK_CHECKPOINT_DIR: /app/data/checkpoints
     volumes:
@@ -127,3 +166,5 @@ volumes:
   kafka_data:
   mongo_data:
   spark_data:
+  mysql_data:
+  postgres_data:
